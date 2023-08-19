@@ -61,6 +61,21 @@ async function run() {
 
         });
 
+        app.post('/menu', async(req,res)=>{
+
+            const newItem = req.body;
+            const result = await menuCollection.insertOne(newItem)
+            res.send(result);
+
+        });
+
+        app.delete('/menu/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)}
+            const result = await menuCollection.deleteOne(query);
+            res.send(result);
+        })
+
         // close menu operate here
 
         const reviewsCollection = client.db("CreatiqueCommerceDb").collection("reviews");
@@ -161,7 +176,7 @@ async function run() {
 
         // Warning: use verifyJWT before using verifyAdmin
         const verifyAdmin = async (req, res, next) => {
-            const email = req.decoded.email;
+            const email = req.decoded.email; 
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
