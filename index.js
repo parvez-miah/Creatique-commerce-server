@@ -3,6 +3,7 @@ const app = express()
 const cors = require('cors');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
+const stripe = require("stripe")(process.env.Payment_Secret_key);
 var jwt = require('jsonwebtoken');
 
 
@@ -61,7 +62,7 @@ async function run() {
 
         });
 
-        app.post('/menu', async(req,res)=>{
+        app.post('/menu', async (req, res) => {
 
             const newItem = req.body;
             const result = await menuCollection.insertOne(newItem)
@@ -69,9 +70,9 @@ async function run() {
 
         });
 
-        app.delete('/menu/:id', async(req,res)=>{
+        app.delete('/menu/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const result = await menuCollection.deleteOne(query);
             res.send(result);
         })
@@ -176,7 +177,7 @@ async function run() {
 
         // Warning: use verifyJWT before using verifyAdmin
         const verifyAdmin = async (req, res, next) => {
-            const email = req.decoded.email; 
+            const email = req.decoded.email;
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
@@ -222,6 +223,40 @@ async function run() {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.send(token)
+        })
+
+        // Create Payment Intent
+
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = price * 100;
+            console.log(price, amount)
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+
+        });
+
+        const paymentsCollection = client.db("CreatiqueCommerceDb").collection("payments");
+        // Payment relataed API
+
+        app.post('/payments', verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const insertResult = await paymentsCollection.insertOne(payment);
+            // operate delete Here also
+
+            const query = {_id: {$in: payment.cartItems.map(id=> new ObjectId(id))}}
+            const deletedResult = await cartCollection.deleteMany(query)
+
+            // here normal call for post..
+            res.send({insertResult, deletedResult})
         })
 
 
