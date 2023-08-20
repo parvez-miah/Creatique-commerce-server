@@ -103,6 +103,14 @@ async function run() {
             const query = { email: email };
             const result = await cartCollection.find(query).toArray();
             res.send(result)
+        });
+
+
+        app.get('/allitems', async(req,res)=>{
+
+
+            const result = await cartCollection.find().toArray();
+            res.send(result)
         })
 
         // post cart collection
@@ -169,6 +177,10 @@ async function run() {
 
         // secure user using jwt
 
+        app.get('/users', verifyJWT, verifyAdminHere, async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result)
+        })
         app.get('/users', verifyJWT, verifyAdminHere, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result)
@@ -257,10 +269,32 @@ async function run() {
 
             // here normal call for post..
             res.send({insertResult, deletedResult})
-        })
+        });
+
+        app.get('/payments', async (req,res)=>{
+            const result = await paymentsCollection.find().toArray();
+            res.send(result)
+
+        });
+
+        app.get('/payments', async (req,res)=>{
+            const result = await paymentsCollection.find().toArray();
+            res.send(result)
+
+        });
 
 
+        app.get('/payments', async (req, res) => {
+            const email = req.query.email;
+            console.log(email)
+            if (!email) {
+                res.send([])
+            }
 
+            const query = { email: email };
+            const result = await paymentsCollection.find(query).toArray();
+            res.send(result)
+        });
 
 
 
